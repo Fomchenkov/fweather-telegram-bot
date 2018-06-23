@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import time
+
 import telebot
 from telebot import types, apihelper
 
@@ -39,6 +41,7 @@ def start_command_handler(message):
 	markup = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True, row_width=1)
 	for command in config.categories:
 		markup.row(command)
+	markup.row('⬅️ Назад')
 	return bot.send_message(cid, text, reply_markup=markup)
 
 
@@ -50,7 +53,15 @@ def text_message_handler(message):
 	main_categories = []
 	for command in config.categories:
 		main_categories.append(command)
-	print(main_categories)
+
+	if message.text == '⬅️ Назад':
+		if uid in READY_TO_ADD_WEATHER:
+			del READY_TO_ADD_WEATHER[uid]
+		text = 'Действие отменено.\n'
+		text += 'Для того, что бы вернуться к началу, отправьте команду /start'
+		markup = types.ReplyKeyboardRemove()
+		return bot.send_message(cid, text, reply_markup=markup)
+
 
 	if uid in READY_TO_ADD_WEATHER:
 		if 'low_category' not in READY_TO_ADD_WEATHER[uid]:
@@ -59,7 +70,8 @@ def text_message_handler(message):
 				return bot.send_message(cid, text)
 			READY_TO_ADD_WEATHER[uid]['low_category'] = message.text
 			text = 'Напишите свое описание к выбранной погоде'
-			markup = types.ReplyKeyboardRemove()
+			markup = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True, row_width=1)
+			markup.row('⬅️ Назад')
 			return bot.send_message(cid, text, reply_markup=markup)
 		if 'description' not in READY_TO_ADD_WEATHER[uid]:
 			READY_TO_ADD_WEATHER[uid]['description'] = message.text
@@ -71,8 +83,11 @@ def text_message_handler(message):
 
 			del READY_TO_ADD_WEATHER[uid]
 			text = 'Твое сообщение - шикарно!'
-			bot.send_message(cid, text)
+			markup = types.ReplyKeyboardRemove()
+			bot.send_message(cid, text, reply_markup=markup)
 			text = 'Спасибо'
+			bot.send_message(cid, text)
+			text = 'Для того, что бы вернуться к началу, отправьте команду /start'
 			return bot.send_message(cid, text)
 
 
@@ -84,11 +99,21 @@ def text_message_handler(message):
 		markup = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True, row_width=1)
 		for command in config.categories[message.text]:
 			markup.row(command)
+		markup.row('⬅️ Назад')
 		return bot.send_message(cid, text, reply_markup=markup)
 
 
 def main():
-	bot.polling(none_stop=True)
+	"""
+	return bot.polling(none_stop=True)
+	"""
+
+	while True:
+		try:
+			bot.polling(none_stop=True)
+		except Exception as e:
+			print(e)
+			time.sleep(30)
 
 
 if __name__ == '__main__':
